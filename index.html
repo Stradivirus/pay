@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        h1 {
+            color: #1877f2;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            color: #606770;
+        }
+
+        input {
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #dddfe2;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #1877f2;
+            color: white;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #166fe5;
+        }
+
+        #response {
+            margin-top: 1rem;
+            text-align: center;
+            color: #606770;
+        }
+
+        @media (max-width: 400px) {
+            .login-container {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>로그인</h1>
+        <form id="loginForm">
+            <label for="username">사용자 이름:</label>
+            <input type="text" id="username" name="username" required>
+            
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" name="password" required>
+            
+            <button type="submit">로그인</button>
+        </form>
+        <div id="response"></div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('https://asia-northeast3-pay-test-433402.cloudfunctions.net/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await response.json();
+                const responseDiv = document.getElementById('response');
+
+                if (result.success) {
+                    responseDiv.textContent = '로그인 성공! 잠시 후 리디렉션됩니다.';
+                    // 로그인 성공 시 index.html로 리디렉션
+                    setTimeout(() => {
+                        window.location.href = 'main.html';
+                    }, 1000); // 1초 후 리디렉션
+                } else {
+                    responseDiv.textContent = '로그인 실패: ' + result.message;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('response').textContent = '오류 발생: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

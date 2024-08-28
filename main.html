@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Payment Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="payment-form">
+            <h2>Simple Payment</h2>
+            <input type="number" id="amount" placeholder="Enter amount">
+            <button id="payButton">Pay Now</button>
+            <div id="result"></div>
+        </div>
+        <div class="receipt-container" id="receiptContainer">
+            <h3>Receipt</h3>
+            <div id="receiptContent"></div>
+            <button id="downloadButton" style="display: none;">Download Receipt</button>
+            <button id="verifyButton" style="display: none;">Verify Receipt</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

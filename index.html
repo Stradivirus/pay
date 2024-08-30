@@ -111,10 +111,12 @@
 
                 if (result.success) {
                     responseDiv.textContent = '로그인 성공! 잠시 후 리디렉션됩니다.';
-                    // 로그인 성공 시 index.html로 리디렉션
+                    // 로그인 성공 시 sessionStorage에 로그인 상태 저장
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    // 로그인 성공 시 main.html로 리디렉션
                     setTimeout(() => {
                         window.location.href = 'main.html';
-                    }, 1000); // 1초 후 리디렉션
+                    }, 500); // 0.5초 후 리디렉션
                 } else {
                     responseDiv.textContent = '로그인 실패: ' + result.message;
                 }

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영수증 조회</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        input[type="date"] {
+            margin-right: 10px;
+        }
+        button {
+            padding: 5px 15px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        #mainButton {
+            background-color: #28a745;
+        }
+        #result-container {
+            display: flex;
+            width: 100%;
+            max-width: 1000px;
+        }
+        #result {
+            background-color: #E8F5E9;
+            padding: 10px;
+            width: 40%;
+            box-sizing: border-box;
+        }
+        #receipt-detail {
+            width: 30%;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-left: 10%;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+            cursor: pointer;
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        li:hover {
+            background-color: #f0f0f0;
+        }
+        .receipt-time {
+            font-weight: bold;
+        }
+        .receipt-amount {
+            color: #007bff;
+        }
+        .receipt-id {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .download-btn, .verify-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .download-btn {
+            background-color: #007bff;
+        }
+        .verify-btn {
+            background-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>영수증 조회</h1>
+    <form id="inquiryForm">
+        <label for="date">날짜 선택:</label>
+        <input type="date" id="date" name="date" required>
+        <button type="submit">조회</button>
+        <button type="button" id="mainButton">메인으로</button>
+    </form>
+    <div id="result-container">
+        <div id="result">
+            <h2>조회 결과</h2>
+            <ul id="receiptList"></ul>
+        </div>
+        <div id="receipt-detail">
+            <h2>영수증 상세 정보</h2>
+            <div id="receiptInfo"></div>
+        </div>
+    </div>
+    <script>
+        let currentReceiptData = null;
+
+        function utcToKst(utcDateString) {
+            return new Date(utcDateString).toLocaleString('ko-KR', {timeZone: 'Asia/Seoul'});
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatAmount(amount) {
+            return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(amount);
+        }
+
+        document.getElementById('inquiryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('date').value;
+            try {
+                const response = await fetch(`https://asia-northeast3-pay-test-433402.cloudfunctions.net/inquiryReceipt?date=${date}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const receipts = await response.json();
+                
+                // Sort receipts by date
+                receipts.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                const list = document.getElementById('receiptList');
+                list.innerHTML = '';
+                receipts.forEach(receipt => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="receipt-time">${formatTime(receipt.date)}</span> -
+                        <span class="receipt-amount">${formatAmount(receipt.amount)}</span><br>
+                        <span class="receipt-id">ID: ${receipt.transactionId}</span>
+                    `;
+                    li.onclick = () => showReceiptDetail(receipt);
+                    list.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error fetching receipts:', error);
+                alert('영수증을 가져오는 중 오류가 발생했습니다.');
+            }
+        });
+
+        document.getElementById('mainButton').addEventListener('click', () => {
+            window.location.href = 'main.html';
+        });
+
+        function showReceiptDetail(receipt) {
+            currentReceiptData = receipt;
+            const receiptInfo = document.getElementById('receiptInfo');
+            receiptInfo.innerHTML = `
+                <p><strong>거래 ID:</strong> ${receipt.transactionId}</p>
+                <p><strong>금액:</strong> ${formatAmount(receipt.amount)}</p>
+                <p><strong>날짜 (UTC):</strong> ${receipt.date}</p>
+                <p><strong>날짜 (KST):</strong> ${utcToKst(receipt.date)}</p>
+                <p><strong>판매자:</strong> ${receipt.merchantName}</p>
+                <p><strong>판매처:</strong> ${receipt.merchantAddress}</p>
+                <button class="download-btn" onclick="downloadReceipt()">영수증 다운로드</button>
+                <button class="verify-btn" onclick="verifyReceipt()">영수증 검증</button>
+            `;
+        }
+
+        function downloadReceipt() {
+            try {
+                if (!currentReceiptData) {
+                    throw new Error('No receipt data available');
+                }
+
+                const receiptText = `
+Transaction ID: ${currentReceiptData.transactionId}
+Price: ${formatAmount(currentReceiptData.amount)}
+Date (UTC): ${currentReceiptData.date}
+Date (KST): ${utcToKst(currentReceiptData.date)}
+Merchant: ${currentReceiptData.merchantName}
+Address: ${currentReceiptData.merchantAddress}
+                `.trim();
+
+                const blob = new Blob([receiptText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `receipt_${currentReceiptData.transactionId}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading receipt:', error);
+                alert('영수증 다운로드 중 오류가 발생했습니다. 다시 시도해 주세요.');
+            }
+        }
+
+        async function verifyReceipt() {
+            try {
+                if (!currentReceiptData) {
+                    throw new Error('No receipt data available');
+                }
+
+                const receiptData = {
+                    transactionId: currentReceiptData.transactionId,
+                    amount: currentReceiptData.amount,
+                    date: currentReceiptData.date // UTC date
+                };
+
+                console.log("Receipt data being sent:", JSON.stringify(receiptData, null, 2));
+
+                const response = await fetch('https://asia-northeast3-pay-test-433402.cloudfunctions.net/verifyReceipt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(receiptData)
+                });
+
+                const data = await response.json();
+                console.log("Response from server:", JSON.stringify(data, null, 2));
+
+                if (data.isValid) {
+                    alert('영수증이 유효합니다!');
+                } else {
+                    alert('영수증이 유효하지 않습니다!');
+                }
+            } catch (error) {
+                console.error('Error verifying receipt:', error);
+                console.error('Error stack:', error.stack);
+                alert(`영수증 검증 중 오류 발생: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

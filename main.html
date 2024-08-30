@@ -13,12 +13,18 @@
             <input type="number" id="amount" placeholder="Enter amount">
             <button id="payButton">Pay Now</button>
             <div id="result"></div>
+            <div class="button-group">
+                <button id="inquiryButton">조회</button>
+                <button id="refundButton">환불</button>
+            </div>
         </div>
         <div class="receipt-container" id="receiptContainer">
             <h3>Receipt</h3>
             <div id="receiptContent"></div>
-            <button id="downloadButton" style="display: none;">Download Receipt</button>
-            <button id="verifyButton" style="display: none;">Verify Receipt</button>
+            <div class="button-group">
+                <button id="downloadButton">Download Receipt</button>
+                <button id="verifyButton">Verify Receipt</button>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
